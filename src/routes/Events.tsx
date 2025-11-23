@@ -7,7 +7,8 @@ import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
-import { Calendar, Users, Clock, Plus, CheckCircle, XCircle } from 'lucide-react';
+import { Pagination } from '../components/Pagination';
+import { Calendar, Users, Clock, Plus, CheckCircle, XCircle, Search } from 'lucide-react';
 import { useToast } from '../hooks/useToast';
 
 export default function Events() {
@@ -15,6 +16,9 @@ export default function Events() {
     const [hasSibling, setHasSibling] = useState(false);
     const [teamMemberInput, setTeamMemberInput] = useState('');
     const [teamMembers, setTeamMembers] = useState<string[]>([]);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const pageSize = 6;
 
     const [formData, setFormData] = useState<Omit<CreateEventData, 'teamMembers' | 'hasSiblingEvent'>>({
         name: '',
@@ -74,6 +78,23 @@ export default function Events() {
 
     const removeTeamMember = (member: string) => {
         setTeamMembers(teamMembers.filter(m => m !== member));
+    };
+
+    // Client-side filtering and pagination
+    const filteredEvents = events?.filter(event =>
+        event.name.toLowerCase().includes(searchQuery.toLowerCase())
+    ) || [];
+
+    const totalPages = Math.ceil(filteredEvents.length / pageSize);
+    const paginatedEvents = filteredEvents.slice(
+        (currentPage - 1) * pageSize,
+        currentPage * pageSize
+    );
+
+    // Reset to page 1 when search changes
+    const handleSearchChange = (value: string) => {
+        setSearchQuery(value);
+        setCurrentPage(1);
     };
 
     return (
@@ -263,86 +284,113 @@ export default function Events() {
                 </Card>
             )}
 
+            {/* Search Bar */}
+            <div className="glass-card rounded-xl p-4">
+                <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        type="text"
+                        placeholder="Search events by name..."
+                        value={searchQuery}
+                        onChange={(e) => handleSearchChange(e.target.value)}
+                        className="pl-10"
+                    />
+                </div>
+            </div>
+
             {/* Events List */}
             {isLoading ? (
                 <LoadingSkeleton />
             ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {events?.map((event) => (
-                        <Card key={event.id} className="hover:shadow-lg transition-shadow">
-                            <CardHeader>
-                                <div className="flex items-start justify-between gap-4">
-                                    <div className="flex-1">
-                                        <CardTitle className="text-lg sm:text-xl">{event.name}</CardTitle>
-                                        <CardDescription className="mt-1">
-                                            ID: {event.id}
-                                        </CardDescription>
+                <>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {paginatedEvents.map((event) => (
+                            <Card key={event.id} className="hover:shadow-lg transition-shadow">
+                                <CardHeader>
+                                    <div className="flex items-start justify-between gap-4">
+                                        <div className="flex-1">
+                                            <CardTitle className="text-lg sm:text-xl">{event.name}</CardTitle>
+                                            <CardDescription className="mt-1">
+                                                ID: {event.id}
+                                            </CardDescription>
+                                        </div>
+                                        {event.resultsReleased ? (
+                                            <Badge className="bg-green-500 flex-shrink-0">
+                                                <CheckCircle className="h-3 w-3 mr-1" />
+                                                Released
+                                            </Badge>
+                                        ) : (
+                                            <Badge variant="secondary" className="flex-shrink-0">
+                                                <XCircle className="h-3 w-3 mr-1" />
+                                                Pending
+                                            </Badge>
+                                        )}
                                     </div>
-                                    {event.resultsReleased ? (
-                                        <Badge className="bg-green-500 flex-shrink-0">
-                                            <CheckCircle className="h-3 w-3 mr-1" />
-                                            Released
-                                        </Badge>
-                                    ) : (
-                                        <Badge variant="secondary" className="flex-shrink-0">
-                                            <XCircle className="h-3 w-3 mr-1" />
-                                            Pending
-                                        </Badge>
-                                    )}
-                                </div>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                    <Clock className="h-4 w-4" />
-                                    <span>{event.duration} days</span>
-                                </div>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                        <Clock className="h-4 w-4" />
+                                        <span>{event.duration} days</span>
+                                    </div>
 
-                                <div className="space-y-2">
-                                    <div className="flex items-start gap-2 text-sm">
-                                        <Calendar className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                                        <div>
-                                            <p className="font-medium">Event Period</p>
-                                            <p className="text-muted-foreground">
-                                                {new Date(event.timePeriod.startDate).toLocaleDateString()} - {new Date(event.timePeriod.endDate).toLocaleDateString()}
+                                    <div className="space-y-2">
+                                        <div className="flex items-start gap-2 text-sm">
+                                            <Calendar className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                                            <div>
+                                                <p className="font-medium">Event Period</p>
+                                                <p className="text-muted-foreground">
+                                                    {new Date(event.timePeriod.startDate).toLocaleDateString()} - {new Date(event.timePeriod.endDate).toLocaleDateString()}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {event.siblingEvent && (
+                                        <div className="pl-4 border-l-2 border-primary/30 space-y-2">
+                                            <p className="text-sm font-semibold">Sibling Event</p>
+                                            <p className="text-sm">{event.siblingEvent.name}</p>
+                                            <p className="text-xs text-muted-foreground">
+                                                {new Date(event.siblingEvent.timePeriod.startDate).toLocaleDateString()} - {new Date(event.siblingEvent.timePeriod.endDate).toLocaleDateString()}
                                             </p>
                                         </div>
-                                    </div>
-                                </div>
+                                    )}
 
-                                {event.siblingEvent && (
-                                    <div className="pl-4 border-l-2 border-primary/30 space-y-2">
-                                        <p className="text-sm font-semibold">Sibling Event</p>
-                                        <p className="text-sm">{event.siblingEvent.name}</p>
-                                        <p className="text-xs text-muted-foreground">
-                                            {new Date(event.siblingEvent.timePeriod.startDate).toLocaleDateString()} - {new Date(event.siblingEvent.timePeriod.endDate).toLocaleDateString()}
-                                        </p>
-                                    </div>
-                                )}
-
-                                <div className="flex items-start gap-2 text-sm">
-                                    <Users className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                                    <div>
-                                        <p className="font-medium">Team Members ({event.teamMembers.length})</p>
-                                        <div className="flex flex-wrap gap-1 mt-1">
-                                            {event.teamMembers.map((member) => (
-                                                <Badge key={member} variant="outline" className="text-xs">
-                                                    {member}
-                                                </Badge>
-                                            ))}
+                                    <div className="flex items-start gap-2 text-sm">
+                                        <Users className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                                        <div>
+                                            <p className="font-medium">Team Members ({event.teamMembers.length})</p>
+                                            <div className="flex flex-wrap gap-1 mt-1">
+                                                {event.teamMembers.map((member) => (
+                                                    <Badge key={member} variant="outline" className="text-xs">
+                                                        {member}
+                                                    </Badge>
+                                                ))}
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
-            )}
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
 
-            {events && events.length === 0 && !showForm && (
-                <div className="text-center py-12">
-                    <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">No events created yet. Click "Create Event" to get started.</p>
-                </div>
+                    {filteredEvents.length === 0 && (
+                        <div className="text-center py-12">
+                            <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                            <p className="text-muted-foreground">
+                                {searchQuery ? 'No events found matching your search.' : 'No events created yet. Click "Create Event" to get started.'}
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={setCurrentPage}
+                        />
+                    )}
+                </>
             )}
         </div>
     );

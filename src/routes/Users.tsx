@@ -7,7 +7,8 @@ import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
-import { Users as UsersIcon, Plus, Mail, Ban, Trash2, CheckCircle2, XCircle } from 'lucide-react';
+import { Pagination } from '../components/Pagination';
+import { Users as UsersIcon, Plus, Mail, Ban, Trash2, CheckCircle2, XCircle, Search, ArrowUpDown } from 'lucide-react';
 import { useToast } from '../hooks/useToast';
 
 export default function Users() {
@@ -15,6 +16,11 @@ export default function Users() {
     const [showEmailDialog, setShowEmailDialog] = useState(false);
     const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
     const [emailData, setEmailData] = useState({ subject: '', message: '' });
+    const [searchQuery, setSearchQuery] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc'); // Default: newest first
+    const pageSize = 6;
+
     const [formData, setFormData] = useState<CreateUserData>({
         fullName: '',
         email: '',
@@ -95,6 +101,37 @@ export default function Users() {
         });
     };
 
+    // Client-side filtering, sorting, and pagination
+    const filteredAndSortedUsers = users
+        ? users
+            .filter(user =>
+                user.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                user.email.toLowerCase().includes(searchQuery.toLowerCase())
+            )
+            .sort((a, b) => {
+                const dateA = new Date(a.createdAt).getTime();
+                const dateB = new Date(b.createdAt).getTime();
+                return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+            })
+        : [];
+
+    const totalPages = Math.ceil(filteredAndSortedUsers.length / pageSize);
+    const paginatedUsers = filteredAndSortedUsers.slice(
+        (currentPage - 1) * pageSize,
+        currentPage * pageSize
+    );
+
+    // Reset to page 1 when search changes
+    const handleSearchChange = (value: string) => {
+        setSearchQuery(value);
+        setCurrentPage(1);
+    };
+
+    const toggleSortOrder = () => {
+        setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc');
+        setCurrentPage(1);
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between flex-wrap gap-4">
@@ -136,6 +173,30 @@ export default function Users() {
                     </CardContent>
                 </Card>
             )}
+
+            {/* Search and Sort Bar */}
+            <div className="glass-card rounded-xl p-4 space-y-4">
+                <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="flex-1 relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            type="text"
+                            placeholder="Search by name or email..."
+                            value={searchQuery}
+                            onChange={(e) => handleSearchChange(e.target.value)}
+                            className="pl-10"
+                        />
+                    </div>
+                    <Button
+                        variant="outline"
+                        onClick={toggleSortOrder}
+                        className="gap-2"
+                    >
+                        <ArrowUpDown className="h-4 w-4" />
+                        Joined {sortOrder === 'desc' ? '↓ (Newest)' : '↑ (Oldest)'}
+                    </Button>
+                </div>
+            </div>
 
             {/* Bulk Actions */}
             {selectedUsers.length > 0 && (
@@ -186,7 +247,7 @@ export default function Users() {
                 <LoadingSkeleton />
             ) : (
                 <>
-                    {users && users.length > 0 && (
+                    {filteredAndSortedUsers.length > 0 && (
                         <div className="flex justify-between items-center mb-4">
                             <Button variant="outline" size="sm" onClick={selectAllUsers}>Select All</Button>
                             <Button variant="outline" size="sm" onClick={() => { setShowEmailDialog(true); selectAllUsers(); }}>
@@ -197,7 +258,7 @@ export default function Users() {
                     )}
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                        {users?.map((user: User) => (
+                        {paginatedUsers.map((user: User) => (
                             <Card key={user.id} className={`hover:shadow-lg transition-shadow ${selectedUsers.includes(user.id) ? 'border-primary' : ''}`}>
                                 <CardHeader>
                                     <div className="flex items-start justify-between gap-4">
@@ -250,14 +311,25 @@ export default function Users() {
                             </Card>
                         ))}
                     </div>
-                </>
-            )}
 
-            {users && users.length === 0 && !showCreateForm && (
-                <div className="text-center py-12">
-                    <UsersIcon className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">No users found. Click "Create User" to add one.</p>
-                </div>
+                    {filteredAndSortedUsers.length === 0 && (
+                        <div className="text-center py-12">
+                            <UsersIcon className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                            <p className="text-muted-foreground">
+                                {searchQuery ? 'No users found matching your search.' : 'No users found. Click "Create User" to add one.'}
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={setCurrentPage}
+                        />
+                    )}
+                </>
             )}
         </div>
     );
