@@ -9,6 +9,7 @@ import Settings from './routes/Settings';
 import Events from './routes/Events';
 import Users from './routes/Users';
 import Chats from './routes/Chats';
+import Workspace from './routes/Workspace';
 import { Layout } from './components/Layout';
 import './index.css';
 
@@ -70,6 +71,12 @@ const chatsRoute = createRoute({
   component: Chats,
 });
 
+const workspaceRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/workspace',
+  component: Workspace,
+});
+
 // Create router
 const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -79,6 +86,7 @@ const routeTree = rootRoute.addChildren([
   eventsRoute,
   usersRoute,
   chatsRoute,
+  workspaceRoute,
   settingsRoute,
 ]);
 

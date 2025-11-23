@@ -11,7 +11,8 @@ import {
     User,
     Calendar,
     Users,
-    MessageSquare
+    MessageSquare,
+    FolderOpen
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { useAtom } from 'jotai';
@@ -31,6 +32,7 @@ const navItems = [
     { to: '/events', label: 'Events', icon: Calendar },
     { to: '/users', label: 'Users', icon: Users },
     { to: '/chats', label: 'Chats', icon: MessageSquare, badge: 2 },
+    { to: '/workspace', label: 'Workspace', icon: FolderOpen },
 ];
 
 const projectItems = [
