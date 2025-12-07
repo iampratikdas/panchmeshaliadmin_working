@@ -189,7 +189,7 @@ export function Layout({ children }: LayoutProps) {
             </AnimatePresence>
 
             <main className={cn('transition-all duration-300', !isMobile && sidebarOpen ? 'lg:pl-64' : 'pl-0')}>
-                <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 pt-20 lg:pt-6 max-w-7xl">
+                <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 pt-20 lg:pt-6 min-w-full relative top-[52px]">
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
                         {children}
                     </motion.div>

@@ -65,7 +65,7 @@ export default function Submit() {
     const canSubmit = title.trim() && content.trim();
 
     return (
-        <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
+        <div className=" mx-auto space-y-4 sm:space-y-6">
             <div>
                 <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">Submit Your Work</h1>
                 <p className="text-sm sm:text-base text-muted-foreground">

@@ -24,7 +24,7 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
                 onClick={onClick}
             >
                 <CardHeader>
-                    <div className="flex items-start justify-between">
+                    <div className="flex items-start flex-col justify-between lg:flex-row md:flex-col sm:flex-col">
                         <div className="flex items-center gap-2">
                             <Icon className="h-5 w-5 text-primary" />
                             <CardTitle className="text-xl">{content.title}</CardTitle>
